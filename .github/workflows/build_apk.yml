@@ -22,7 +22,7 @@ jobs:
           pip3 install buildozer cython
       - name: Prepare
         run: |
-          cp DDL/main.py DDL/support.py AI_writing/
+          cp main.py support.py AI_writing/
           cd AI_writing
           python3 -c "import sys; f=open('main_app.py','r'); c=f.read(); f.close(); c=c.replace('sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom main import MISSIONS','from main import MISSIONS'); f=open('main_app.py','w'); f.write(c); f.close(); print('OK')"
       - name: Build
