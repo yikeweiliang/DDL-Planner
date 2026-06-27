@@ -1,0 +1,53 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
+          pip3 install --upgrade pip
+          pip3 install buildozer cython
+
+      - name: Prepare build files
+        run: |
+          # Copy dependency files into AI_writing so they are bundled in APK
+          cp DDL/main.py DDL/support.py AI_writing/
+          # Update import in main_app.py to import locally
+          python -c "
+import sys
+f=open('AI_writing/main_app.py','r',encoding='utf-8')
+c=f.read()
+f.close()
+c=c.replace("sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom main import MISSIONS","from main import MISSIONS")
+f=open('AI_writing/main_app.py','w',encoding='utf-8')
+f.write(c)
+f.close()
+print('Import path fixed')
+"
+
+      - name: Build APK with Buildozer
+        run: |
+          cd AI_writing
+          buildozer android debug 2>&1
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: DDLPlanner-APK
+          path: AI_writing/bin/*.apk
+          if-no-files-found: error
